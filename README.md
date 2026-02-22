@@ -1,82 +1,89 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/brKTKdOU)
-# Portfolio Piece Assignment
+# Scaled Dot-Product Attention From Scratch: Why `1/sqrt(d_k)` Stabilizes Transformer Attention
 
-This repository is a template for your portfolio piece. You'll build on your weekly labs to create a polished, well-documented project that demonstrates your understanding of the concepts we've covered.
+This project is a portfolio mini-report for DS 593 focused on implementing and analyzing attention from first principles in PyTorch. The central question is why Transformers scale attention logits by 1/sqrt(d_k) and how that changes behavior as key/query dimension grows.
 
-## What You're Building
+## Overview
 
-Your portfolio piece could be a Jupyter notebook (or set of notebooks), or another reporting format (PDF with embedded images, etc.) that:
-- Demonstrates understanding of course concepts
-- Includes working, well-documented code (in notebooks or imported scripts)
-- Analyzes results critically
-- Tells a clear story from problem/question to approach to results and insights
+The notebook builds scaled dot-product attention step by step, verifies correctness on small and larger matrices, and runs a  sweep over d_k = {4, 16, 64, 256} under scaled and unscaled conditions.  
+Using ideas such as, logit growth, softmax saturation, and scaling to build empirical evidence using metrics, checks, and visualizations.
 
-If you'd like, this can become part of your professional portfolio, so treat it as work you'd be proud to show a potential employer or collaborator.
+## Methods
 
-## Grading
+The main analysis is in:
 
-Your work will be evaluated on:
-- **Conceptual Understanding** (5 pts): Do you explain *why* you chose specific methods? Do you connect to course material?
-- **Technical Implementation** (5 pts): Does your code run without errors? Do all components work correctly?
-- **Code Quality & Documentation** (5 pts): Is your notebook/code clear and well-organized? Does it tell a story?
-- **Critical Analysis** (5 pts): Do you interpret results thoughtfully? Discuss limitations and tradeoffs?
-- **Peer Reviews** (5 pts): Did you provide constructive feedback on two classmates' projects?
+- `Portifilo_Piece_1.ipynb`
 
-See the full [rubric](https://lauren897.github.io/cds593-private/rubrics.html#portfolio-piece-rubric) for details.
+Core components:
 
-## Suggested Repository Structure
+- From-scratch implementation of scaled dot-product attention
+- Numerical stabilization before softmax
+- Sanity checks on small tensors and a larger matrix test case
+- Masking edge-case sanity check (masked positions get near-zero attention)
+- Sweep across d_k for scaled vs unscaled attention
+- Metrics:
+  - mean max attention weight (peakedness)
+  - mean attention entropy (spread)
+  - gradient norms for `Q` and `K`
+- Heatmaps for visual comparison across dimensions
+- Multi-seed robustness summary (mean ± std across seeds)
+- Parity check against `torch.nn.functional.scaled_dot_product_attention`
 
-You're free to organize this however makes sense for your project, but here's a structure that works well:
+Why these choices:
 
-```
-your-portfolio-piece/
-├── README.md (this file - update it with your project details)
-├── requirements.txt or equivalent
-├── notebooks/
-│   └── main_analysis.ipynb (or multiple notebooks)
-├── src/ (optional - if you refactor code into modules)
-├── data/ (see note below about data)
-├── outputs/ (figures, saved models, etc.)
-```
+- Controlled d_k sweeps isolate dimensionality effects predicted by theory.
+- Max-weight + entropy quantify attention concentration and spread.
+- Gradient norms connect attention behavior to optimization stability.
+- PyTorch check validates implementation correctness.
 
-**About data**: If your dataset is small (<10 MB), you can include it in the repo. For larger datasets, put instructions in your README for how to download/access it, and add data files to `.gitignore`.
+## Key Results
 
-## Writing a Good README
+From `outputs/attention_sweep_results.csv`:
 
-Once you've completed your project, update this README to include:
+- As `d_k` increases, **unscaled** attention becomes much sharper.
+- At `d_k=256`:
+  - unscaled `mean_max_weight = 0.9942`
+  - scaled `mean_max_weight = 0.3680`
+  - unscaled `mean_entropy = 0.0296`
+  - scaled `mean_entropy = 1.7256`
+-Scaling by sqrt(d_k) prevents softmax saturation and keeps attention distributions more stable across dimensions.
+- Multi-seed robustness (`outputs/attention_robustness_summary.csv`) shows the same scaled-vs-unscaled trend continues across seeds.
+- The parity check reports a very small max absolute difference relative to PyTorch's built-in attention. 
 
-1. **Project Title** - make it descriptive
-2. **Overview** - 2-3 sentences: what problem are you solving and why?
-3. **Methods** - what approaches did you use? Why these choices?
-4. **Key Results** - what did you find? (keep it brief, details go in the notebook)
-5. **How to Run** - step-by-step instructions so someone can reproduce your work
-6. **Requirements** - what packages/versions are needed?
 
-Your README should make it easy for someone to understand what you did and run your code.
+## Repository Structure
 
-## Peer Review Process
+- `Portifilo_Piece_1.ipynb`: main report notebook
+- `requirements.txt`: project dependencies
+- `outputs/attention_sweep_results.csv`: metric table from the sweep
+- `outputs/attention_robustness_summary.csv`: multi-seed mean/std summary
+- `outputs/attention_heatmap_gallery.png`: scaled vs unscaled heatmaps across d_k
+- `outputs/gradient_norms_vs_dk.png`: gradient-norm comparison plot
 
-You'll be assigned two classmates' repositories to review. Provide your feedback through **pull requests**:
+## How To Run
 
-1. Clone your assigned classmate's repository to your machine
-2. Read through their notebooks, scripts, and documentation
-3. Try running the code yourself
-4. Create a pull request with inline comments on their code/analysis
-5. In the PR description, provide overall feedback addressing:
-   - What worked well conceptually and technically?
-   - What could be clearer in the documentation or analysis?
-   - Specific suggestions for deeper analysis or improvements
-   - Overall strengths of the project
+1. Clone the repository and open it in VS Code (or Jupyter).
+2. Create and activate an environment (recommended):
+   - `python3 -m venv .venv`
+   - `source .venv/bin/activate` (macOS/Linux)
+3. Install dependencies:
+   - `python -m pip install -r requirements.txt`
+4. Open `Portifilo_Piece_1.ipynb`.
+5. Select the same interpreter used for installation.
+6. Run all cells from top to bottom.
 
-Be constructive and specific. Good peer reviews identify both strengths and areas for growth.
+The notebook will save outputs to the `outputs/` folder automatically.
 
-You are *not* grading each other's pieces, just providing feedback.
+## Requirements
 
-## Timeline
+See `requirements.txt`:
 
-- **Friday, Feb 20**: Portfolio piece due (push your final version to this repo)
-- **Friday, Feb 27**: Peer reviews due (submit PRs with feedback to your assigned classmates' repos)
+- `matplotlib>=3.7`
+- `numpy>=1.24`
+- `pandas>=2.0`
+- `torch>=2.0`
+- `ipykernel>=6.29`
 
-## Questions?
+## Notes and Limitations
 
-We can discuss more in class, in office hours, in discussion, and you can ask on Piazza.
+- The experiment uses synthetic random `Q/K/V`, not a fully trained language model.
+- Results are reproducible with fixed seeds but exact values may change with different seeds/hardware.

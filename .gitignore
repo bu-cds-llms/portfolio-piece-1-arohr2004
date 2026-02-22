@@ -1,0 +1,12 @@
+.venv/
+.vscode/
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS/editor artifacts
+.DS_Store
