@@ -87,5 +87,3 @@ See `requirements.txt`:
 
 - The experiment uses synthetic random `Q/K/V`, not a fully trained language model.
 - Results are reproducible with fixed seeds but exact values may change with different seeds/hardware.
-
-Peer review PR opened branch 
